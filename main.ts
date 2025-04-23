@@ -1,4 +1,4 @@
-// main.ts - Improved Buzzsprout API Server for Deno Deploy
+// main.ts - Updated Buzzsprout API Server for Deno Deploy
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 // Your Buzzsprout credentials
@@ -25,7 +25,11 @@ serve(async (request) => {
   // Health check endpoint
   if (path === "/api/health") {
     return new Response(
-      JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }),
+      JSON.stringify({ 
+        status: "ok", 
+        timestamp: new Date().toISOString(),
+        message: "Buzzsprout API server is running"
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -34,13 +38,14 @@ serve(async (request) => {
   if (path === "/api/stats") {
     try {
       console.log("Fetching podcast stats...");
-      console.log(`Using Podcast ID: ${PODCAST_ID}`);
       
-      // First try to fetch episodes
-      const episodesUrl = `https://www.buzzsprout.com/api/v1/${PODCAST_ID}/episodes`;
+      // Important: Append .json to the URL as required by Buzzsprout API
+      const episodesUrl = `https://www.buzzsprout.com/api/v1/${PODCAST_ID}/episodes.json`;
+      
       const headers = {
         "Authorization": `Token token=${API_TOKEN}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "User-Agent": "Deno-Buzzsprout-API-Client/1.0" // Adding User-Agent as recommended
       };
       
       console.log(`Requesting from: ${episodesUrl}`);
@@ -63,7 +68,7 @@ serve(async (request) => {
             details: errorText
           }),
           { 
-            status: 500, 
+            status: response.status, // Return the actual error code
             headers: { ...corsHeaders, "Content-Type": "application/json" } 
           }
         );
@@ -118,17 +123,21 @@ serve(async (request) => {
   // Episode endpoint
   if (path === "/api/episodes") {
     try {
-      const episodesUrl = `https://www.buzzsprout.com/api/v1/${PODCAST_ID}/episodes`;
+      // Important: Append .json to the URL as required by Buzzsprout API
+      const episodesUrl = `https://www.buzzsprout.com/api/v1/${PODCAST_ID}/episodes.json`;
+      
       const response = await fetch(episodesUrl, {
         method: "GET",
         headers: {
           "Authorization": `Token token=${API_TOKEN}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "User-Agent": "Deno-Buzzsprout-API-Client/1.0" // Adding User-Agent as recommended
         }
       });
       
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`API error: ${response.status}, ${errorText}`);
         return new Response(
           JSON.stringify({ 
             error: "Buzzsprout API request failed", 
@@ -136,7 +145,7 @@ serve(async (request) => {
             details: errorText
           }),
           { 
-            status: 500, 
+            status: response.status, // Return the actual error code
             headers: { ...corsHeaders, "Content-Type": "application/json" } 
           }
         );
@@ -150,6 +159,79 @@ serve(async (request) => {
       
     } catch (error) {
       console.error("Error in /api/episodes:", error);
+      return new Response(
+        JSON.stringify({ 
+          error: "Internal server error", 
+          message: error.message 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+  }
+
+  // Alternative episode endpoint that allows passing token and ID as query parameters
+  if (path === "/api/episodes-alt") {
+    try {
+      // Get API token and podcast ID from query parameters
+      const queryParams = url.searchParams;
+      const tokenFromQuery = queryParams.get("api_token");
+      const podcastIdFromQuery = queryParams.get("podcast_id");
+      
+      // Use provided parameters or fall back to environment values
+      const token = tokenFromQuery || API_TOKEN;
+      const podcastId = podcastIdFromQuery || PODCAST_ID;
+      
+      if (!token || !podcastId) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Missing credentials", 
+            message: "API token and podcast ID are required" 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
+      
+      // Important: Append .json to the URL as required by Buzzsprout API
+      const episodesUrl = `https://www.buzzsprout.com/api/v1/${podcastId}/episodes.json?api_token=${token}`;
+      
+      const response = await fetch(episodesUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "Deno-Buzzsprout-API-Client/1.0"
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`API error: ${response.status}, ${errorText}`);
+        return new Response(
+          JSON.stringify({ 
+            error: "Buzzsprout API request failed", 
+            status: response.status,
+            details: errorText
+          }),
+          { 
+            status: response.status,
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
+      
+      const episodes = await response.json();
+      return new Response(
+        JSON.stringify(episodes),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+      
+    } catch (error) {
+      console.error("Error in /api/episodes-alt:", error);
       return new Response(
         JSON.stringify({ 
           error: "Internal server error", 
