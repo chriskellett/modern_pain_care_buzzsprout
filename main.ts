@@ -4,8 +4,8 @@ import { BuzzsproutClient, getPodcastStats } from "./buzzsprout-deno-client.ts";
 import { corsHeaders } from "./cors.ts";
 
 // Your Buzzsprout credentials
-const API_TOKEN = "YOUR_API_TOKEN"; // Replace with your actual Buzzsprout API token
-const PODCAST_ID = "YOUR_PODCAST_ID"; // Replace with your actual podcast ID
+const API_TOKEN = "7680875e1475229aabe7aef39fc78e59"; // Replace with your actual Buzzsprout API token
+const PODCAST_ID = "2124284"; // Replace with your actual podcast ID
 
 // Define endpoints and handlers
 const routes = {
