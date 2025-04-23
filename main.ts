@@ -3,6 +3,10 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { BuzzsproutClient, getPodcastStats } from "./buzzsprout-deno-client.ts";
 import { corsHeaders } from "./cors.ts";
 
+// Your Buzzsprout credentials
+const API_TOKEN = "YOUR_API_TOKEN"; // Replace with your actual Buzzsprout API token
+const PODCAST_ID = "YOUR_PODCAST_ID"; // Replace with your actual podcast ID
+
 // Define endpoints and handlers
 const routes = {
   "/api/stats": handleStats,
@@ -50,29 +54,9 @@ async function handleStats(request: Request): Promise<Response> {
     });
   }
 
-  // Get API credentials from query parameters
-  const url = new URL(request.url);
-  const apiToken = url.searchParams.get("apiToken");
-  const podcastId = url.searchParams.get("podcastId");
-
-  // Validate required parameters
-  if (!apiToken || !podcastId) {
-    return new Response(
-      JSON.stringify({ 
-        error: "Missing required parameters: apiToken and podcastId" 
-      }), {
-        status: 400,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
-
   try {
-    // Get podcast statistics
-    const stats = await getPodcastStats(apiToken, podcastId);
+    // Get podcast statistics using the hardcoded API credentials
+    const stats = await getPodcastStats(API_TOKEN, PODCAST_ID);
     
     // Return the stats as JSON
     return new Response(JSON.stringify(stats), {
@@ -107,29 +91,9 @@ async function handleEpisodes(request: Request): Promise<Response> {
     });
   }
 
-  // Get API credentials from query parameters
-  const url = new URL(request.url);
-  const apiToken = url.searchParams.get("apiToken");
-  const podcastId = url.searchParams.get("podcastId");
-
-  // Validate required parameters
-  if (!apiToken || !podcastId) {
-    return new Response(
-      JSON.stringify({ 
-        error: "Missing required parameters: apiToken and podcastId" 
-      }), {
-        status: 400,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
-
   try {
-    // Create Buzzsprout client
-    const client = new BuzzsproutClient(apiToken, podcastId);
+    // Create Buzzsprout client with hardcoded credentials
+    const client = new BuzzsproutClient(API_TOKEN, PODCAST_ID);
     
     // Get episodes
     const episodes = await client.getEpisodes();
