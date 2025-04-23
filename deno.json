@@ -1,0 +1,18 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --watch main.ts",
+    "start": "deno run --allow-net main.ts"
+  },
+  "imports": {
+    "std/": "https://deno.land/std@0.190.0/"
+  },
+  "fmt": {
+    "options": {
+      "useTabs": false,
+      "lineWidth": 100,
+      "indentWidth": 2,
+      "singleQuote": false,
+      "proseWrap": "preserve"
+    }
+  }
+}
