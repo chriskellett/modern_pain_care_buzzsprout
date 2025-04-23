@@ -1,96 +1,51 @@
-// main.ts - Basic Buzzsprout API Server for Deno Deploy
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+// main.js
+Deno.serve(async (req) => {
+  // Your Buzzsprout credentials
+  const API_TOKEN = "7680875e1475229aabe7aef39fc78e59";
+  const PODCAST_ID = "2124284";
 
-// Your Buzzsprout credentials
-const API_TOKEN = "7680875e1475229aabe7aef39fc78e59";
-const PODCAST_ID = "2124284";
+  // Handle CORS for browser-based requests
+  const headers = {
+    "content-type": "application/json",
+    "Access-Control-Allow-Origin": "*", // Allow all origins
+    "Access-Control-Allow-Methods": "GET",
+    "Access-Control-Allow-Headers": "Authorization",
+  };
 
-// CORS headers
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
-
-// Serve the HTTP requests
-serve(async (request) => {
-  const url = new URL(request.url);
-  const path = url.pathname;
-  
-  console.log(`Received request for: ${path}`);
-
-  // Health check endpoint
-  if (path === "/api/health") {
-    return new Response(
-      JSON.stringify({ 
-        status: "ok", 
-        timestamp: new Date().toISOString(),
-        message: "Health endpoint working correctly"
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  try {
+    // Make GET request to Buzzsprout API for episodes
+    const response = await fetch(
+      `https://www.buzzsprout.com/api/${PODCAST_ID}/episodes.json?api_token=${API_TOKEN}`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Token token=${API_TOKEN}`,
+        },
+      }
     );
-  }
-  
-  // Raw endpoint
-  if (path === "/api/raw") {
-    return new Response(
-      JSON.stringify({ 
-        status: "endpoint_found",
-        message: "Raw endpoint is defined correctly"
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-  
-  // Alt endpoint
-  if (path === "/api/alt") {
-    return new Response(
-      JSON.stringify({ 
-        status: "endpoint_found",
-        message: "Alt endpoint is defined correctly"
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-  
-  // Stats endpoint stub
-  if (path === "/api/stats") {
-    return new Response(
-      JSON.stringify({ 
-        status: "endpoint_found",
-        message: "Stats endpoint is defined correctly"
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
 
-  // Episodes endpoint stub
-  if (path === "/api/episodes") {
-    return new Response(
-      JSON.stringify({ 
-        status: "endpoint_found",
-        message: "Episodes endpoint is defined correctly"
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  // Not found
-  return new Response(
-    JSON.stringify({
-      status: "not_found",
-      message: `Endpoint ${path} is not defined`,
-      available_endpoints: [
-        "/api/health",
-        "/api/raw",
-        "/api/alt",
-        "/api/stats",
-        "/api/episodes"
-      ]
-    }),
-    { 
-      status: 404, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    if (!response.ok) {
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch data from Buzzsprout" }),
+        { status: response.status, headers }
+      );
     }
-  );
+
+    const episodes = await response.json();
+
+    // Calculate total plays and total episodes
+    const totalPlays = episodes.reduce((sum, episode) => sum + (episode.total_plays || 0), 0);
+    const totalEpisodes = episodes.length;
+
+    // Return the result as JSON
+    return new Response(
+      JSON.stringify({ totalPlays, totalEpisodes }),
+      { status: 200, headers }
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: "Server error: " + error.message }),
+      { status: 500, headers }
+    );
+  }
 });
