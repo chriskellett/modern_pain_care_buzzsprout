@@ -1,9 +1,9 @@
-// main.ts - Configured Buzzsprout API Server for Deno Deploy
+// main.ts - Fixed Buzzsprout API Server for Deno Deploy
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 // Your Buzzsprout credentials
-const API_TOKEN = "7680875e1475229aabe7aef39fc78e59";
-const PODCAST_ID = "2124284";
+const API_TOKEN = "YOUR_API_TOKEN"; // Replace with your actual Buzzsprout API token
+const PODCAST_ID = "YOUR_PODCAST_ID"; // Replace with your actual podcast ID
 
 // CORS headers
 const corsHeaders = {
