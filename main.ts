@@ -1,4 +1,4 @@
-// main.ts - Minimal Buzzsprout API Server for Deno Deploy
+// main.ts - Basic Buzzsprout API Server for Deno Deploy
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 // Your Buzzsprout credentials
@@ -14,13 +14,10 @@ const corsHeaders = {
 
 // Serve the HTTP requests
 serve(async (request) => {
-  // Handle CORS preflight
-  if (request.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
   const url = new URL(request.url);
   const path = url.pathname;
+  
+  console.log(`Received request for: ${path}`);
 
   // Health check endpoint
   if (path === "/api/health") {
@@ -28,99 +25,72 @@ serve(async (request) => {
       JSON.stringify({ 
         status: "ok", 
         timestamp: new Date().toISOString(),
+        message: "Health endpoint working correctly"
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  
+  // Raw endpoint
+  if (path === "/api/raw") {
+    return new Response(
+      JSON.stringify({ 
+        status: "endpoint_found",
+        message: "Raw endpoint is defined correctly"
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  
+  // Alt endpoint
+  if (path === "/api/alt") {
+    return new Response(
+      JSON.stringify({ 
+        status: "endpoint_found",
+        message: "Alt endpoint is defined correctly"
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  
+  // Stats endpoint stub
+  if (path === "/api/stats") {
+    return new Response(
+      JSON.stringify({ 
+        status: "endpoint_found",
+        message: "Stats endpoint is defined correctly"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  // Minimal raw Buzzsprout endpoint - just return whatever we get
-  if (path === "/api/raw") {
-    try {
-      // Simple request to Buzzsprout API
-      const episodesUrl = `https://www.buzzsprout.com/api/${PODCAST_ID}/episodes.json`;
-      
-      const response = await fetch(episodesUrl, {
-        method: "GET",
-        headers: {
-          "Authorization": `Token token=${API_TOKEN}`,
-          "Content-Type": "application/json",
-          "User-Agent": "Deno-Buzzsprout-API-Client/1.0"
-        }
-      });
-      
-      // Return whatever response we get, whether success or error
-      const contentType = response.headers.get("Content-Type") || "application/json";
-      const body = await response.text();
-      
-      return new Response(body, {
-        status: response.status,
-        headers: { 
-          ...corsHeaders, 
-          "Content-Type": contentType 
-        }
-      });
-      
-    } catch (error) {
-      console.error("Error in /api/raw:", error);
-      return new Response(
-        JSON.stringify({ 
-          error: "Failed to connect to Buzzsprout API", 
-          message: error.message,
-          stack: error.stack
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-  }
-
-  // Alternative API token approach using query parameter
-  if (path === "/api/alt") {
-    try {
-      // Use query parameter approach instead of Authorization header
-      const episodesUrl = `https://www.buzzsprout.com/api/${PODCAST_ID}/episodes.json?api_token=${API_TOKEN}`;
-      
-      const response = await fetch(episodesUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": "Deno-Buzzsprout-API-Client/1.0"
-        }
-      });
-      
-      // Return whatever response we get, whether success or error
-      const contentType = response.headers.get("Content-Type") || "application/json";
-      const body = await response.text();
-      
-      return new Response(body, {
-        status: response.status,
-        headers: { 
-          ...corsHeaders, 
-          "Content-Type": contentType 
-        }
-      });
-      
-    } catch (error) {
-      console.error("Error in /api/alt:", error);
-      return new Response(
-        JSON.stringify({ 
-          error: "Failed to connect to Buzzsprout API", 
-          message: error.message,
-          stack: error.stack
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
+  // Episodes endpoint stub
+  if (path === "/api/episodes") {
+    return new Response(
+      JSON.stringify({ 
+        status: "endpoint_found",
+        message: "Episodes endpoint is defined correctly"
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   // Not found
-  return new Response("Not Found", { 
-    status: 404, 
-    headers: corsHeaders 
-  });
+  return new Response(
+    JSON.stringify({
+      status: "not_found",
+      message: `Endpoint ${path} is not defined`,
+      available_endpoints: [
+        "/api/health",
+        "/api/raw",
+        "/api/alt",
+        "/api/stats",
+        "/api/episodes"
+      ]
+    }),
+    { 
+      status: 404, 
+      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    }
+  );
 });
